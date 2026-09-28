@@ -12,9 +12,11 @@ def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Return the great-circle distance in kilometres between two points.
 
     The great-circle distance is the shortest path over the Earth's surface,
-    so it is the most generous (lowest) distance a traveller could cover.
-    Using it means the required speed we calculate is a lower bound, which
-    avoids overstating how suspicious a pair of logins is.
+    so the required speed calculated from it is approximately the lowest
+    speed that could explain the two logins. That avoids overstating how
+    suspicious a pair of logins is. It is only approximate: the spherical
+    model can differ from the true distance by up to ~0.5%, and the result
+    is only as accurate as the input coordinates.
     """
     phi1 = math.radians(lat1)
     phi2 = math.radians(lat2)

@@ -45,6 +45,14 @@ def load_login_events(path: str | Path) -> list[LoginEvent]:
 def _check_columns(fieldnames: list[str] | None) -> None:
     if not fieldnames:
         raise InputValidationError("Input file is empty or has no header row")
+    # A repeated column name makes the file ambiguous: csv.DictReader silently
+    # keeps only the last value, so detection could run on a different
+    # timestamp, location or user than the analyst sees in the file. Names
+    # that differ only in case or surrounding spaces are just as ambiguous.
+    normalised = [name.strip().lower() for name in fieldnames]
+    duplicates = sorted({name for name in normalised if normalised.count(name) > 1})
+    if duplicates:
+        raise InputValidationError(f"Input file has duplicate columns: {duplicates}")
     missing = [column for column in REQUIRED_COLUMNS if column not in fieldnames]
     if missing:
         raise InputValidationError(f"Input file is missing required columns: {missing}")

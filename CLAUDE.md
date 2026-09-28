@@ -38,6 +38,7 @@ soc_toolkit/
 config/impossible_travel.json   # Example config, used only when passed via --config
 data/sample/                    # Synthetic data only; files must be named "synthetic_*"
 tests/                          # unittest; one test module per package module
+.github/workflows/tests.yml     # CI: unittest on Python 3.10–3.14 (actions pinned to commit SHAs)
 ```
 
 Data flow: `cli` → `config` + `loader` → `impossible_travel` (uses `geo`) → `report`. `impossible_travel`, `geo` and `report` are pure (no file I/O, no printing) so they can be unit-tested with in-memory events. Only `cli` prints.
@@ -50,6 +51,7 @@ Key detection rules:
 - Same timestamp + different location → `InvalidTravelPairError`; the run stops. Same timestamp + same location (duplicate) → 0 km/h, not flagged.
 - Any invalid row or pair stops the whole run with exit code 1 and **no partial report**, since a partial report could look complete while missing a detection.
 - Text fields containing control or format characters (Unicode Cc/Cf, e.g. ANSI escapes or bidi overrides) are rejected, so log content cannot manipulate the analyst's terminal output.
+- Duplicate column names in the CSV header (compared ignoring case and surrounding spaces) are rejected, since DictReader would silently keep only the last.
 - Threshold precedence: `--max-speed-kmh` > `--config` file > built-in default. The report prints the active threshold and its source. Config files with unknown keys, and non-positive or non-finite thresholds, are rejected.
 - Every `LoginEvent` carries `source_row` so findings can be traced back to the input line.
 
@@ -69,6 +71,8 @@ python -m unittest tests.test_geo.TestHaversine.test_known_distance         # on
 ```
 
 Keep this section accurate if module names or CLI flags change.
+
+If `report.py` output changes, regenerate the README example output.
 
 ## Development principles
 

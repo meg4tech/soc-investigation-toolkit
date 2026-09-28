@@ -1,5 +1,7 @@
 # SOC Investigation Toolkit
 
+![tests](https://github.com/meg4tech/soc-investigation-toolkit/actions/workflows/tests.yml/badge.svg)
+
 A defensive, modular toolkit to support SOC analysts investigating security alerts.
 
 **Version 0.1** provides one capability: **Impossible Travel detection** over login data. It runs locally, uses only the Python standard library, and makes no network connections.
@@ -8,7 +10,7 @@ A defensive, modular toolkit to support SOC analysts investigating security aler
 
 ## What is Impossible Travel?
 
-If an account signs in from London and then from Sydney two hours later, the user would have to travel at about 8,500 km/h, which is far faster than any commercial flight. That usually means that someone other than the user is signing in (for example with stolen credentials or a session token), or that something such as a VPN is distorting the location. Either way, it deserves investigation.
+If an account signs in from London and then from Sydney two hours later, the user would have to travel at about 8,500 km/h, which is far faster than any commercial flight. This can indicate that someone other than the user is signing in (for example with stolen credentials or a stolen session token). In practice, many of these alerts have harmless causes, such as VPNs, mobile networks, or cloud and proxy services that distort the apparent location. Either way, the pair needs investigating before any conclusion is drawn.
 
 ## How the detection works
 
@@ -35,9 +37,17 @@ Two edge cases are handled explicitly:
 | Same timestamp, **different** location | Rejected as invalid data (the run stops). One account cannot be in two places at the same instant, so this points to a data problem that an analyst must resolve first. |
 | Same timestamp, **same** location (duplicate) | Accepted. The speed is 0 km/h and the pair is not flagged. |
 
-## Requirements
+## Installation
 
-Python 3.10 or later. There are no third-party dependencies.
+Requires Python 3.10 or later. There are no third-party dependencies, so there is no `pip install` step.
+
+```
+git clone https://github.com/meg4tech/soc-investigation-toolkit.git
+cd soc-investigation-toolkit
+python --version    # must be 3.10 or later
+```
+
+Depending on your system, the Python command may be `python3` (macOS and Linux) or `py` (Windows) instead of `python`.
 
 ## Usage
 
@@ -48,6 +58,51 @@ python -m soc_toolkit data/sample/synthetic_logins.csv
 python -m soc_toolkit data/sample/synthetic_logins.csv --config config/impossible_travel.json
 python -m soc_toolkit data/sample/synthetic_logins.csv --max-speed-kmh 500
 python -m soc_toolkit --help
+```
+
+### Example output
+
+Running the first command against the synthetic sample data flags one pair of logins:
+
+```
+========================================================================
+SOC Investigation Toolkit v0.1.0 - Impossible Travel Analysis
+========================================================================
+Input file       : data/sample/synthetic_logins.csv
+Login events     : 12
+Users analysed   : 5
+Login pairs      : 7
+Speed threshold  : 900.0 km/h (source: built-in default)
+Pairs flagged    : 1
+
+------------------------------------------------------------------------
+FINDING 1 of 1: Impossible travel - REQUIRES ANALYST INVESTIGATION
+------------------------------------------------------------------------
+User             : bob@example.com
+Previous login   : 2026-03-02 09:00:00 UTC | 192.0.2.20 | London, GB (51.5074, -0.1278) [row 8]
+Current login    : 2026-03-02 11:00:00 UTC | 203.0.113.25 | Sydney, AU (-33.8688, 151.2093) [row 2]
+Distance         : 16,994.0 km
+Elapsed time     : 2h 00m 00s
+Required speed   : 8,497.0 km/h (threshold 900.0 km/h)
+
+Suggested analyst checks:
+  - Confirm with the user (via a trusted channel) whether they made both sign-ins.
+  - Check whether either IP belongs to a corporate VPN, proxy or cloud egress range.
+  - Review both sign-ins in the source logs: MFA result, device, client and user agent.
+  - Look for follow-on activity from the second IP (mailbox rules, token use, data access).
+
+========================================================================
+IMPORTANT: This output is automated investigation support, NOT a determination
+of compromise. Every finding requires analyst investigation and verification
+against the original log sources before any conclusion or response action.
+
+Known limitations:
+  - IP geolocation can be inaccurate, especially for mobile and ISP-assigned IPs.
+  - VPNs, proxies, and cloud services can place a legitimate user far from their real location.
+  - Only consecutive logins present in the input file are compared.
+  - Distances are great-circle estimates; required speeds are approximate minimums.
+  - Values are reported as provided in the input and have not been independently verified.
+========================================================================
 ```
 
 ### Threshold configuration
@@ -73,7 +128,7 @@ The report always states which threshold was used and where it came from. Unknow
 
 ## Input format
 
-The input is a UTF-8 CSV file with a header row and these columns (extra columns are ignored):
+The input is a UTF-8 CSV file with a header row and these columns (extra columns are ignored; duplicate column names are rejected):
 
 | Column | Example | Rules |
 |---|---|---|
@@ -112,14 +167,62 @@ data/sample/             Synthetic sample data only
 tests/                   unittest suite (one module per package module)
 ```
 
+### How the modules fit together
+
+`cli.py` runs each stage in order:
+
+```
+1. config.py             choose the threshold: --max-speed-kmh > --config file > built-in default
+2. loader.py             read the CSV, validate every row, convert timestamps to UTC
+3. impossible_travel.py  pair each user's consecutive logins, calculate speed, flag
+     └─ geo.py           haversine distance between the two logins
+4. report.py             format the SOC-style text report
+```
+
+`cli.py` then prints the report (exit code 0). If any stage finds invalid input or configuration, it prints an error instead and produces no report (exit code 1).
+
+The stages pass data to each other as the read-only records defined in `models.py` (`LoginEvent` and `TravelAssessment`). `impossible_travel.py`, `geo.py` and `report.py` never read files or print, so they are unit-tested with in-memory data. Only `cli.py` prints.
+
 ## Limitations
 
-- IP geolocation can be inaccurate, especially for mobile and ISP-assigned addresses.
-- VPNs, proxies and cloud services can place a legitimate user far from their real location, which causes false positives.
-- Only consecutive logins present in the input file are compared.
-- Distances are great-circle estimates, so the required speeds are minimums.
+The toolkit only compares the values in the input file. Every finding must be verified by an analyst.
+
+### Common causes of false positives
+
+- **VPNs, proxies and cloud services** can place a legitimate user far from their real location, and a user may switch between a VPN and a direct connection within minutes.
+- **Inaccurate IP geolocation**, especially for mobile carrier and ISP-assigned addresses, which often geolocate to a regional hub hundreds of kilometres from the user.
+- **Short distances with coarse geolocation.** Two logins 10 minutes apart that geolocate 200 km apart require 1,200 km/h and are flagged, even if the user never moved. Version 0.1 has no minimum-distance tolerance.
+- **Clock skew** between log sources can shrink the apparent time between two logins and inflate the required speed.
+
+### False negatives (activity that is not flagged)
+
+- **Nearby VPN or proxy exits.** An attacker connecting through a VPN or proxy close to the user's real location produces no impossible travel.
+- **Logins missing from the input file.** Only consecutive logins *in the file* are compared. If an export leaves out a log source or a time range, the suspicious login may not be there at all, or its nearest login in the file may be far enough away in time that the required speed looks plausible.
+- **One account under different identifiers.** Users are matched by name, case-insensitively, so the same account recorded as a UPN in one source and as `DOMAIN\user` in another is treated as two users, and those logins are never paired.
+- **Compromise without travel.** A stolen session token used from near the user's location, for example, produces no travel anomaly at all.
+
+### Accuracy
+
+- Distances are great-circle estimates, so required speeds are approximate minimums based on the input coordinates.
 - Input values are trusted as provided. The toolkit does not look up or verify IP locations.
+
+## Responsible use
+
+This is a defensive project, built to help SOC analysts triage alerts on systems they are authorised to monitor.
+
+- Only analyse authentication logs you are authorised to access, and handle them under your organisation's data-protection and retention policies.
+- Login times and locations are personal data. Use the toolkit for legitimate security investigation, not to track individuals' movements or working patterns.
+- Never commit real user, IP or sign-in data to this repository or a fork. Use synthetic data for demonstrations.
+- Findings are leads for investigation, not evidence of wrongdoing. Do not take action against a user based on this output alone.
 
 ## Scope
 
 Version 0.1 deliberately excludes Azure, Microsoft Sentinel/KQL, PowerShell, external or enrichment APIs, databases, and web or AI features. These are planned for later versions.
+
+## Development notes
+
+This project was built with AI assistance (Claude Code). [CLAUDE.md](CLAUDE.md) contains the project rules and security requirements the assistant worked under.
+
+## License
+
+Released under the MIT License. See [LICENSE](LICENSE).

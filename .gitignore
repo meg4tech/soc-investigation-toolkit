@@ -5,12 +5,38 @@ __pycache__/
 build/
 dist/
 
+# Test and tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
 # Virtual environments
 .venv/
 venv/
 env/
 
-# Secrets - never commit credentials, keys or tokens
+# Data - only synthetic sample data may be committed.
+# Data exports are ignored anywhere in the repo, so a real sign-in log saved
+# in the wrong folder cannot be committed by accident.
+*.csv
+*.tsv
+*.xls
+*.xlsx
+*.json
+!config/*.json
+*.evtx
+*.log
+data/*
+!data/sample/
+data/sample/*
+!data/sample/README.md
+!data/sample/synthetic_*.csv
+
+# Secrets - never commit credentials, keys or tokens.
+# Kept after the data rules: Git applies the last matching rule, so these
+# still win over the !config/*.json exception above.
 .env
 .env.*
 *.pem
@@ -21,19 +47,12 @@ secrets.*
 *secret*.json
 credentials*.json
 
-# Data - only synthetic sample data may be committed
-data/*
-!data/sample/
-data/sample/*
-!data/sample/README.md
-!data/sample/synthetic_*.csv
-*.log
-
 # Editors and OS
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Claude Code local settings
 .claude/settings.local.json

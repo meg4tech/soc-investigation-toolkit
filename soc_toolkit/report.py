@@ -30,7 +30,7 @@ LIMITATIONS = (
     "IP geolocation can be inaccurate, especially for mobile and ISP-assigned IPs.",
     "VPNs, proxies, and cloud services can place a legitimate user far from their real location.",
     "Only consecutive logins present in the input file are compared.",
-    "Distances are great-circle estimates; required speeds are therefore minimums.",
+    "Distances are great-circle estimates; required speeds are approximate minimums.",
     "Values are reported as provided in the input and have not been independently verified.",
 )
 

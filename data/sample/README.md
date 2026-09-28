@@ -3,7 +3,7 @@
 Every file in this directory is **synthetic**. None of it came from a real system.
 
 - Users are on `example.com`, a domain reserved for documentation (RFC 2606).
-- IP addresses are from the documentation ranges `192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24` (RFC 5737) and `2001:db8::/32` (RFC 3849). They cannot belong to real hosts.
+- IP addresses are from the documentation ranges `192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24` (RFC 5737) and `2001:db8::/32` (RFC 3849). They are reserved for documentation and should never be routed on the public internet.
 - Coordinates are approximate city centres.
 
 Never replace these files with real authentication logs, and never commit real user, IP or sign-in data to this repository. Sample files must keep the `synthetic_` filename prefix. `.gitignore` excludes any other file in `data/`.

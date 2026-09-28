@@ -76,6 +76,14 @@ class TestInvalidInput(LoaderTestCase):
     def test_missing_column(self):
         self.assert_rejected("user,timestamp,ip_address,latitude,longitude\n", "location")
 
+    def test_duplicate_column(self):
+        text = HEADER.rstrip("\n") + ",latitude\n" + VALID_ROW.rstrip("\n") + ",-33.8688\n"
+        self.assert_rejected(text, "duplicate columns")
+
+    def test_duplicate_column_differing_in_case_and_spaces(self):
+        text = HEADER.rstrip("\n") + ", Latitude\n" + VALID_ROW.rstrip("\n") + ",-33.8688\n"
+        self.assert_rejected(text, "duplicate columns")
+
     def test_missing_value(self):
         self.assert_rejected(HEADER + VALID_ROW.replace("192.0.2.10", ""), "ip_address")
 
