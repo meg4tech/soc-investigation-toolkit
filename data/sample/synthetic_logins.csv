@@ -1,0 +1,13 @@
+user,timestamp,ip_address,latitude,longitude,location
+bob@example.com,2026-03-02T11:00:00+00:00,203.0.113.25,-33.8688,151.2093,"Sydney, AU"
+alice@example.com,2026-03-02T08:00:00+00:00,192.0.2.10,51.5074,-0.1278,"London, GB"
+dave@example.com,2026-03-01T22:00:00-05:00,198.51.100.40,40.7128,-74.0060,"New York, US"
+erin@example.com,2026-03-04T10:00:00+01:00,192.0.2.77,40.4168,-3.7038,"Madrid, ES"
+carol@example.com,2026-03-03T12:15:00Z,2001:db8::15,52.5200,13.4050,"Berlin, DE"
+alice@example.com,2026-03-02T14:30:00+01:00,198.51.100.12,48.8566,2.3522,"Paris, FR"
+bob@example.com,2026-03-02T09:00:00+00:00,192.0.2.20,51.5074,-0.1278,"London, GB"
+dave@example.com,2026-03-02T11:30:00+00:00,192.0.2.41,51.5074,-0.1278,"London, GB"
+erin@example.com,2026-03-04T10:00:00+01:00,192.0.2.77,40.4168,-3.7038,"Madrid, ES"
+alice@example.com,2026-03-03T09:00:00+01:00,198.51.100.12,48.8566,2.3522,"Paris, FR"
+dave@example.com,2026-03-03T08:45:00+00:00,192.0.2.42,53.4808,-2.2426,"Manchester, GB"
+erin@example.com,2026-03-04T16:00:00+01:00,203.0.113.78,41.3874,2.1686,"Barcelona, ES"

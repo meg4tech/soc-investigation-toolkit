@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Secrets - never commit credentials, keys or tokens
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+*.p12
+secrets.*
+*secret*.json
+credentials*.json
+
+# Data - only synthetic sample data may be committed
+data/*
+!data/sample/
+data/sample/*
+!data/sample/README.md
+!data/sample/synthetic_*.csv
+*.log
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Claude Code local settings
+.claude/settings.local.json
